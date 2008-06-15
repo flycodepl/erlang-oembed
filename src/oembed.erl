@@ -14,19 +14,9 @@ request(URL, Endpoint, Opts) ->
   do_get(Endpoint ++ [$?|to_query_string(Params)]).
 
 to_query_string(Params) when is_list(Params) ->
-  implode($&, map(fun to_query_string/1, Params));
+  string:join(map(fun to_query_string/1, Params), "&");
 to_query_string({K, V}) ->
   flatten([percent_encode(K), $=, percent_encode(V)]).
-
-implode(Sep, Strings) when is_list(Strings) ->
-  implode(Sep, Strings, []).
-
-implode(_Sep, [], Imploded) ->
-  flatten(reverse(Imploded));
-implode(Sep, [String|Strings], []) ->
-  implode(Sep, Strings, [String]);
-implode(Sep, [String|Strings], Imploded) ->
-  implode(Sep, Strings, [String, Sep|Imploded]).
 
 do_get(URL) ->
   case http:request(URL) of
