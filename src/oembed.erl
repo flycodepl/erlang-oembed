@@ -8,9 +8,9 @@ test() ->
   URL = "http://flickr.com/photos/apelad/2351180594/",
   {ok, Props} = oembed:request(URL, Endpoint),
   error_logger:info_msg("oEmbed response: ~p~n~n", [Props]),
-  "Laugh-Out-Loud Cats #792" = proplists:get_value(title, Props),
-  photo = proplists:get_value(type, Props),
-  500 = proplists:get_value(width, Props),
+  "Laugh-Out-Loud Cats #792" = proplists:get_value("title", Props),
+  "photo" = proplists:get_value("type", Props),
+  "500" = proplists:get_value("width", Props),
   ok.
 
 request(URL, Endpoint) ->
@@ -24,7 +24,7 @@ get_json(URL) ->
     {ok, Response} ->
       case status_code(Response) of
         200 ->
-          process_response(rfc4627:decode(body(Response)));
+          process(rfc4627:decode(body(Response)));
         401 ->
           {error, unauthorized};
         404 ->
@@ -44,29 +44,10 @@ status_code(Response) ->
 body(Response) ->
   element(3, Response).
 
-process_response({ok, {obj, Props}, []}) ->
-  {ok, [process_prop(KV) || KV <- Props]};
-process_response(Else) ->
+process({ok, {obj, Props}, []}) ->
+  {ok, [{K, binary_to_list(V)} || {K, V} <- Props]};
+process(Else) ->
   Else.
-
-process_prop({K, V}) when is_list(K) ->
-  process_prop({list_to_atom(K), binary_to_list(V)});
-process_prop({type, V}) ->
-  {type, list_to_atom(V)};
-process_prop({K, V}) ->
-  case is_integer_prop(K) of
-    true ->
-      {K, list_to_integer(V)};
-    false ->
-      {K, V}
-  end.
-
-is_integer_prop(cache_age) -> true;
-is_integer_prop(thumbnail_width) -> true;
-is_integer_prop(thumbnail_height) -> true;
-is_integer_prop(width) -> true;
-is_integer_prop(height) -> true;
-is_integer_prop(_) -> false.
 
 query_params_string([]) ->
   [];
