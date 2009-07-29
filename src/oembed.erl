@@ -3,7 +3,6 @@
 -export([request/2, request/3]).
 
 -import(fmt, [percent_encode/1]).
--import(lists, [map/2, flatten/1, reverse/1]).
 
 
 request(URL, Endpoint) ->
@@ -14,9 +13,9 @@ request(URL, Endpoint, Opts) ->
   do_get(Endpoint ++ [$?|to_query_string(Params)]).
 
 to_query_string(Params) when is_list(Params) ->
-  string:join(map(fun to_query_string/1, Params), "&");
+  string:join(lists:map(fun to_query_string/1, Params), "&");
 to_query_string({K, V}) ->
-  flatten([percent_encode(K), $=, percent_encode(V)]).
+  lists:flatten([percent_encode(K), $=, percent_encode(V)]).
 
 do_get(URL) ->
   case http:request(URL) of
@@ -44,7 +43,7 @@ body(Response) ->
   element(3, Response).
 
 process_response({ok, {obj, Props}, []}) ->
-  {ok, map(fun process_prop/1, Props)};
+  {ok, lists:map(fun process_prop/1, Props)};
 process_response(Else) ->
   Else.
 
