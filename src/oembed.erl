@@ -7,9 +7,9 @@ request(URL, Endpoint) ->
   request(URL, Endpoint, []).
 
 request(URL, Endpoint, Params) ->
-  do_get(Endpoint ++ query_params_string([{url, URL}, {format, json}|Params])).
+  get_json(Endpoint ++ query_params_string([{url, URL}, {format, json}|Params])).
 
-do_get(URL) ->
+get_json(URL) ->
   case http:request(URL) of
     {ok, Response} ->
       case status_code(Response) of
