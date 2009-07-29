@@ -7,7 +7,7 @@ request(URL, Endpoint) ->
   request(URL, Endpoint, []).
 
 request(URL, Endpoint, Params) ->
-  get_json(Endpoint ++ query_params_string([{url, URL}, {format, json}|Params])).
+  get_json(string:concat(Endpoint, query_params_string([{url, URL}, {format, json}|Params]))).
 
 get_json(URL) ->
   case http:request(URL) of
