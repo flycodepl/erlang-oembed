@@ -2,20 +2,12 @@
 
 -export([request/2, request/3]).
 
--import(fmt, [percent_encode/1]).
-
 
 request(URL, Endpoint) ->
   request(URL, Endpoint, []).
 
-request(URL, Endpoint, Opts) ->
-  Params = [{url, URL}, {format, json}|Opts],
-  do_get(Endpoint ++ [$?|to_query_string(Params)]).
-
-to_query_string(Params) when is_list(Params) ->
-  string:join(lists:map(fun to_query_string/1, Params), "&");
-to_query_string({K, V}) ->
-  lists:flatten([percent_encode(K), $=, percent_encode(V)]).
+request(URL, Endpoint, Params) ->
+  do_get(Endpoint ++ query_params_string([{url, URL}, {format, json}|Params])).
 
 do_get(URL) ->
   case http:request(URL) of
@@ -65,3 +57,35 @@ is_integer_prop(thumbnail_height) -> true;
 is_integer_prop(width) -> true;
 is_integer_prop(height) -> true;
 is_integer_prop(_) -> false.
+
+query_params_string([]) ->
+  [];
+query_params_string(Params) ->
+  [$?|string:join([query_param_string(Param) || Param <- Params], "&")].
+
+query_param_string({Name, Value}) ->
+  lists:concat([percent_encode(Name), "=", percent_encode(Value)]).
+
+-define(is_alphanum(C), C >= $A, C =< $Z; C >= $a, C =< $z; C >= $0, C =< $9).
+
+percent_encode(Term) when is_integer(Term) ->
+  integer_to_list(Term);
+percent_encode(Term) when is_atom(Term) ->
+  atom_to_list(Term);
+percent_encode(Term) when is_list(Term) ->
+  percent_encode(lists:reverse(Term, []), []).
+
+percent_encode([X | T], Acc) when ?is_alphanum(X); X =:= $-; X =:= $_; X =:= $.; X =:= $~ ->
+  percent_encode(T, [X | Acc]);
+percent_encode([X | T], Acc) ->
+  NewAcc = [$%, hexchr(X bsr 4), hexchr(X band 16#0f) | Acc],
+  percent_encode(T, NewAcc);
+percent_encode([], Acc) ->
+  Acc.
+
+-compile({inline, [{hexchr, 1}]}).
+
+hexchr(N) when N >= 10 ->
+  N + $A - 10;
+hexchr(N) when N < 10 ->
+  N + $0.
