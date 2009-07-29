@@ -2,52 +2,60 @@
 
 -export([request/2, request/3, test/0]).
 
+-include_lib("xmerl/include/xmerl.hrl").
+
 
 test() ->
   Endpoint = "http://www.flickr.com/services/oembed/",
   URL = "http://flickr.com/photos/apelad/2351180594/",
   {ok, Props} = oembed:request(URL, Endpoint),
   error_logger:info_msg("oEmbed response: ~p~n~n", [Props]),
-  "Laugh-Out-Loud Cats #792" = proplists:get_value("title", Props),
-  "photo" = proplists:get_value("type", Props),
-  "500" = proplists:get_value("width", Props),
+  "Laugh-Out-Loud Cats #792" = proplists:get_value(title, Props),
+  "photo" = proplists:get_value(type, Props),
+  "500" = proplists:get_value(width, Props),
   ok.
 
 request(URL, Endpoint) ->
-  request(URL, Endpoint, []).
+  request(URL, Endpoint, [{format, xml}]).
 
 request(URL, Endpoint, Params) ->
-  get_json(string:concat(Endpoint, query_params_string([{url, URL}, {format, json}|Params]))).
+  String = string:concat(Endpoint, query_params_string([{url, URL}|Params])),
+  handle(http:request(String)).
 
-get_json(URL) ->
-  case http:request(URL) of
-    {ok, Response} ->
-      case status_code(Response) of
-        200 ->
-          process(rfc4627:decode(body(Response)));
-        401 ->
-          {error, unauthorized};
-        404 ->
-          {error, not_found};
-        501 ->
-          {error, not_implemented};
+handle({ok, {{_, Code, _}, Headers, Body}}) ->
+  handle(Code, Headers, Body);
+handle(Else) ->
+  Else.
+
+handle(501, _, _) ->
+  {error, not_implemented};
+handle(404, _, _) ->
+  {error, not_found};
+handle(401, _, _) ->
+  {error, unauthorized};
+handle(200, Headers, Body) ->
+  case proplists:lookup("content-type", Headers) of
+    {_, ContentType} ->
+      case hd(string:tokens(ContentType, ";")) of
+        "application/json" ->
+          case rfc4627:decode(Body) of
+            {ok, {obj, Props}, []} ->
+              {ok, [{K, binary_to_list(V)} || {K, V} <- Props]};
+            Else ->
+              Else
+          end;
+        "text/xml" ->
+          {XML, []} = xmerl_scan:string(Body),
+          {ok, [xml_prop(Element) || Element <- xmerl_xpath:string("//oembed/*", XML)]};
         _ ->
-          Response
+          {error, invalid_media_type}
       end;
-    Else ->
-      Else
+    none ->
+      {error, unknown_content_type}
   end.
 
-status_code(Response) ->
-  element(2, element(1, Response)).
-
-body(Response) ->
-  element(3, Response).
-
-process({ok, {obj, Props}, []}) ->
-  {ok, [{K, binary_to_list(V)} || {K, V} <- Props]};
-process(Else) ->
-  Else.
+xml_prop(#xmlElement{name=Name, content=[Text]}) ->
+  {Name, Text#xmlText.value}.
 
 query_params_string([]) ->
   [];
