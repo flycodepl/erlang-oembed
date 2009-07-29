@@ -1,7 +1,17 @@
 -module(oembed).
 
--export([request/2, request/3]).
+-export([request/2, request/3, test/0]).
 
+
+test() ->
+  Endpoint = "http://www.flickr.com/services/oembed/",
+  URL = "http://flickr.com/photos/apelad/2351180594/",
+  {ok, Props} = oembed:request(URL, Endpoint),
+  error_logger:info_msg("oEmbed response: ~p~n~n", [Props]),
+  "Laugh-Out-Loud Cats #792" = proplists:get_value(title, Props),
+  photo = proplists:get_value(type, Props),
+  500 = proplists:get_value(width, Props),
+  ok.
 
 request(URL, Endpoint) ->
   request(URL, Endpoint, []).
