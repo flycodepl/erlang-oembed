@@ -35,7 +35,7 @@ body(Response) ->
   element(3, Response).
 
 process_response({ok, {obj, Props}, []}) ->
-  {ok, lists:map(fun process_prop/1, Props)};
+  {ok, [process_prop(KV) || KV <- Props]};
 process_response(Else) ->
   Else.
 
