@@ -1,11 +1,4 @@
-SOURCE_FILES := $(wildcard src/*.erl)
-
-
-all: ebin
-
-ebin: $(SOURCE_FILES:src/%.erl=ebin/%.beam)
-
-ebin/%.beam: src/%.erl
+all:
 	@test -d ebin || mkdir ebin
 	@erl -make
 
