@@ -20,7 +20,7 @@ request(URL, Endpoint) ->
 
 request(URL, Endpoint, Params) ->
   String = string:concat(Endpoint, query_params_string([{url, URL}|Params])),
-  handle(http:request(String)).
+  handle(httpc:request(String)).
 
 handle({ok, {{_, Code, _}, Headers, Body}}) ->
   handle(Code, Headers, Body);
