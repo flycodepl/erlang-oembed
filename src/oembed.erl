@@ -38,7 +38,7 @@ handle(200, Headers, Body) ->
     {_, ContentType} ->
       case hd(string:tokens(ContentType, ";")) of
         "application/json" ->
-          case rfc4627:decode(Body) of
+          case mochijson2:decode(Body) of
             {ok, {obj, Props}, []} ->
               {ok, [{K, binary_to_list(V)} || {K, V} <- Props]};
             Else ->
