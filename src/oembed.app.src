@@ -1,0 +1,6 @@
+{application, oembed,
+ [{description,"oEmbed for erlang"},
+  {vsn,"1.0"},
+  {modules,[]},
+  {registered, []},
+  {applications,[kernel,stdlib]}]}.

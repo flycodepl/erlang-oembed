@@ -1,6 +1,5 @@
 all:
-	@test -d ebin || mkdir ebin
-	@erl -make
-
+	./rebar compile
 clean:
-	@rm -rf ebin erl_crash.dump
+	./rebar clean
+	@rm -rf erl_crash.dump
